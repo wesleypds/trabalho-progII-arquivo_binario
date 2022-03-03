@@ -16,6 +16,7 @@ void listarProdutos(FILE* listProd);
 void excluirProd(FILE* exProd);
 void attPreco(FILE* attPr);
 void attQtd(FILE* attQtde);
+int verificarCodigo(FILE* verCod, unsigned int aux);
 
 int main(){
 
@@ -64,10 +65,23 @@ int main(){
 
 void inserirProdutos(FILE* inserirProd){
     
-    struct estoque produtos = {0, "", "", "", 0.0, 0, 0};
+    unsigned int aux;
+
+    
     puts("######     Inserir Produtos     ######");
     printf("Código do produto (1 a 100): ");
-    scanf("%d", &produtos.ProdutoId);
+    scanf("%d", &aux);
+
+    if(verificarCodigo(inserirProd, aux) == 1){
+        system("clear");
+        puts("Código já cadastrado!\n\n");
+        fclose(inserirProd);
+        exit(1);
+    }
+
+    struct estoque produtos = {0, "", "", "", 0.0, 0, 0};
+
+    produtos.ProdutoId = aux;
     produtos.estoque = 'S';
 
     fseek(inserirProd, (produtos.ProdutoId - 1) * sizeof(struct estoque), SEEK_SET);
@@ -126,14 +140,12 @@ void attPreco(FILE* attPr){
     fseek(attPr, (aux - 1) * sizeof(struct estoque), SEEK_SET);
     
     fread(&produtos, sizeof(struct estoque), 1, attPr);
-    if(aux == produtos.ProdutoId){
 
-        printf("Valor do produto: ");
-        scanf("%lf", &produtos.valor);
+    printf("Valor do produto: ");
+    scanf("%lf", &produtos.valor);
 
-        fseek(attPr, (aux - 1) * sizeof(struct estoque), SEEK_SET);
-        fwrite(&produtos, sizeof(struct estoque), 1, attPr);
-    }
+    fseek(attPr, (aux - 1) * sizeof(struct estoque), SEEK_SET);
+    fwrite(&produtos, sizeof(struct estoque), 1, attPr);
     
     system("clear");
 }
@@ -150,18 +162,18 @@ void attQtd(FILE* attQtde){
     fseek(attQtde, (aux - 1) * sizeof(struct estoque), SEEK_SET);
     
     fread(&produtos, sizeof(struct estoque), 1, attQtde);
-    if(aux == produtos.ProdutoId){
+    
+    printf("Quantidade do produto: ");
+    scanf("%u", &produtos.qtd);
 
-        printf("Quantidade do produto: ");
-        scanf("%u", &produtos.qtd);
-
-        if(produtos.qtd == 0){
-            produtos.estoque = 'N';
-        }
-
-        fseek(attQtde, (aux - 1) * sizeof(struct estoque), SEEK_SET);
-        fwrite(&produtos, sizeof(struct estoque), 1, attQtde);
+    if(produtos.qtd == 0){
+        produtos.estoque = 'N';
+    }else if(produtos.qtd > 0){
+        produtos.estoque = 'S';
     }
+
+    fseek(attQtde, (aux - 1) * sizeof(struct estoque), SEEK_SET);
+    fwrite(&produtos, sizeof(struct estoque), 1, attQtde);
     
     system("clear");
 }
@@ -197,4 +209,13 @@ void listarProdutos(FILE* listProd){
     fprintf(listProdTxt, "Total estoque: %ld", totalEstoq);
 
     fclose(listProdTxt);
+}
+
+int verificarCodigo(FILE* verCod, unsigned int aux){
+
+    struct estoque produtos;
+    fseek(verCod, (aux - 1) * sizeof(struct estoque), SEEK_SET);
+    if(fread(&produtos, sizeof(struct estoque), 1, verCod)){
+        return 1;
+    }
 }
